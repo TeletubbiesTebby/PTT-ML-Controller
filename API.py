@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import pickle
 import numpy as np
+import math
 
 # สร้าง FastAPI instance
 app = FastAPI()
@@ -80,13 +81,44 @@ class Remaining_Lifespan_Features(BaseModel):
 def read_root():
     return {"message": "Neural Network API for Efficiency Percentage and Remaining Lifespan Prediction is running!"}
 
-# Endpoint สำหรับพยากรณ์ Optimal RPM
+# # Endpoint สำหรับพยากรณ์ Optimal RPM
+# @app.post("/predict_optimalRPM/")
+# def predict_optimalRPM(features: Optimal_RPM_Features):
+#     # แปลง 'Time of Day' ให้เป็นตัวเลข ('Peak' = 1, 'Off-Peak' = 0)
+#     time_of_day = 1 if features.time_of_day == 'Peak' else 0
+    
+#     # เตรียมข้อมูล input
+#     input_data = np.array([[
+#         features.flow_rate,
+#         features.inlet_temperature,
+#         features.outlet_temperature,
+#         features.delta_temperature,
+#         features.pressure,
+#         features.delta_pressure,
+#         features.power_consumption,
+#         features.vibration,
+#         features.ambient_temperature,
+#         time_of_day,  # encoded 'Time of Day'
+#         features.cooling_load,
+#         features.motor_speed,
+#         features.energy_usage_regular_rpm
+#     ]])
+
+#     # ปรับ scale ของข้อมูล input ด้วย StandardScaler
+#     input_data_scaled = scaler_optimalRPM.transform(input_data)
+
+#     # ใช้โมเดล Random Forest ในการพยากรณ์ Optimal RPM
+#     prediction = random_forest_optimalRPM.predict(input_data_scaled)
+
+#     # Return ผลลัพธ์
+#     return {"Optimal RPM": float(prediction[0])}
+
 @app.post("/predict_optimalRPM/")
 def predict_optimalRPM(features: Optimal_RPM_Features):
-    # แปลง 'Time of Day' ให้เป็นตัวเลข ('Peak' = 1, 'Off-Peak' = 0)
+    # Encode 'Time of Day' as a number ('Peak' = 1, 'Off-Peak' = 0)
     time_of_day = 1 if features.time_of_day == 'Peak' else 0
     
-    # เตรียมข้อมูล input
+    # Prepare the input data
     input_data = np.array([[
         features.flow_rate,
         features.inlet_temperature,
@@ -103,14 +135,32 @@ def predict_optimalRPM(features: Optimal_RPM_Features):
         features.energy_usage_regular_rpm
     ]])
 
-    # ปรับ scale ของข้อมูล input ด้วย StandardScaler
+    # Scale the input data using StandardScaler
     input_data_scaled = scaler_optimalRPM.transform(input_data)
 
-    # ใช้โมเดล Random Forest ในการพยากรณ์ Optimal RPM
-    prediction = random_forest_optimalRPM.predict(input_data_scaled)
+    # Predict the Optimal RPM using the Random Forest model
+    optimal_rpm_pred = random_forest_optimalRPM.predict(input_data_scaled)[0]
 
-    # Return ผลลัพธ์
-    return {"Optimal RPM": float(prediction[0])}
+    # Validate motor_speed to avoid division by zero
+    if features.motor_speed == 0:
+        return {"error": "Motor speed cannot be zero."}
+
+    # Calculate Energy Usage (Predicted Optimal RPM) based on the formula
+    energy_usage_pred_optimal_rpm = (
+        features.energy_usage_regular_rpm * ((optimal_rpm_pred / features.motor_speed) ** 2)
+    )
+
+    # Validate the calculated values
+    if not math.isfinite(optimal_rpm_pred) or not math.isfinite(energy_usage_pred_optimal_rpm):
+        return {"error": "Invalid calculation result. Check input values."}
+
+    # Return the results
+    return {
+        "Optimal RPM": float(optimal_rpm_pred),
+        "Energy Usage (Regular RPM)": float(features.energy_usage_regular_rpm),
+        "Energy Usage (Predicted Optimal RPM)": float(energy_usage_pred_optimal_rpm)
+    }
+
 
 # Endpoint สำหรับพยากรณ์ Remaining Lifespan
 @app.post("/predict_lifespan/")
