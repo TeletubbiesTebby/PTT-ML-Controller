@@ -3,9 +3,18 @@ from pydantic import BaseModel
 import pickle
 import numpy as np
 import math
-
+from fastapi.middleware.cors import CORSMiddleware
 # สร้าง FastAPI instance
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # อนุญาตทุก Origin (เปลี่ยน "*" เป็นโดเมนที่คุณอนุญาต)
+    allow_credentials=True,
+    allow_methods=["*"],  # อนุญาตทุก Methods (GET, POST, OPTIONS ฯลฯ)
+    allow_headers=["*"],  # อนุญาตทุก Headers
+)
 
 # โหลด Random Forest model สำหรับ Optimal RPM
 with open("random_forest_optimalRPM.pkl", "rb") as file:
