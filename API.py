@@ -10,7 +10,10 @@ app = FastAPI()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # อนุญาตทุก Origin (เปลี่ยน "*" เป็นโดเมนที่คุณอนุญาต)
+     allow_origins=[
+        "http://localhost:3000",  # สำหรับ Local Development
+        "https://ptt-web.pages.dev",  # สำหรับ Production
+    ],
     allow_credentials=True,
     allow_methods=["*"],  # อนุญาตทุก Methods (GET, POST, OPTIONS ฯลฯ)
     allow_headers=["*"],  # อนุญาตทุก Headers
