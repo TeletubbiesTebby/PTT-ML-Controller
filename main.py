@@ -15,7 +15,7 @@ app.add_middleware(
         "https://ptt-web.pages.dev",  # สำหรับ Production
     ],
     allow_credentials=True,
-    allow_methods=["*"],  # อนุญาตทุก Methods (GET, POST, OPTIONS ฯลฯ)
+    allow_methods=["GET, POST, OPTIONS"],  # อนุญาตทุก Methods (GET, POST, OPTIONS ฯลฯ)
     allow_headers=["*"],  # อนุญาตทุก Headers
 )
 
